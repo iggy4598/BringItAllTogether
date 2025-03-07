@@ -13,10 +13,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
- model User {
-   id        String   @id @default(uuid())
-   firstName String   @unique
-   lastName  String
-   email     String   @unique
-   password  String
- }
+model User {
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String  @unique
+  password  String
+}
+model Item {
+  id          String  @id @default(uuid())
+  name        String
+  description String
+  reviews     Review[]
+}
+
+model Review {
+  id      String @id @default(uuid())
+  rating  Int
+  comment String
+  itemId  String
+  item    Item @relation(fields: [itemId], references: [id])
+}
