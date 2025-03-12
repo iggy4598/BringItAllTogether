@@ -1,54 +1,28 @@
 const { prisma } = require("./common");
 
 const createNewUser = async (firstName, lastName, email, password) => {
-  const response = await prisma.user.create({
-    data: {
-      firstName,
-      lastName,
-      email,
-      password,
-    },
+  return await prisma.user.create({
+    data: { firstName, lastName, email, password },
   });
-  return response;
 };
 
 const getUserByEmail = async (email) => {
-  const response = await prisma.user.findFirstOrThrow({
-    where: { email },
-  });
-  return response;
+  return await prisma.user.findUnique({ where: { email } });
 };
 
 const getUserById = async (id) => {
-  const response = await prisma.user.findFirstOrThrow({
-    where: { id },
-  });
-  return response;
+  return await prisma.user.findUnique({ where: { id: Number(id) } });
 };
 
 const getAllUsers = async () => {
-  const response = await prisma.user.findMany();
-  return response;
-};
-
-const deleteUser = async (id) => {
-  const response = await prisma.user.delete({
-    where: { id },
-  });
-  return response;
+  return await prisma.user.findMany();
 };
 
 const updateUser = async (id, firstName, lastName, email, password) => {
-  const response = await prisma.user.update({
-    where: { id },
-    data: {
-      firstName,
-      lastName,
-      email,
-      password,
-    },
+  return await prisma.user.update({
+    where: { id: Number(id) },
+    data: { firstName, lastName, email, password },
   });
-  return response;
 };
 
 module.exports = {
@@ -56,6 +30,5 @@ module.exports = {
   getUserByEmail,
   getUserById,
   getAllUsers,
-  deleteUser,
   updateUser,
 };

@@ -4,33 +4,95 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client-js"
-}
+// schema.prisma
+// References:
+// - Prisma Documentation: https://www.prisma.io/docs/
+// - Polymorphic relations workaround: Use separate models for each relation type
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String  @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String  @unique
-  password  String
+generator client {
+  provider = "prisma-client-js"
 }
+
+model User {
+  id         Int      @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  email      String   @unique
+  password   String
+  isAdmin    Boolean  @default(false)
+  reviews    Review[]
+  comments   Comment[]
+  reports    Report[]
+  createdAt  DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model Item {
-  id          String  @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
   description String
+  image       String
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
   reviews     Review[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model Review {
-  id      String @id @default(uuid())
-  rating  Int
-  comment String
-  itemId  String
-  item    Item @relation(fields: [itemId], references: [id])
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  text      String
+  image     String?
+  itemId    Int
+  userId    Int
+  item      Item     @relation(fields: [itemId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  comments  Comment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  reviewId  Int
+  userId    Int
+  review    Review   @relation(fields: [reviewId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Report {
+  id        Int    @id @default(autoincrement())
+  type      String
+  targetId  Int
+  reason    String
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Claim {
+  id        Int    @id @default(autoincrement())
+  itemId    Int
+  userId    Int
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
