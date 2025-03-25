@@ -90,6 +90,23 @@ app.get("/api/items/:id", async (req, res) => {
   }
 });
 
+app.post("/api/items", isLoggedIn, async (req,res)=> {
+  try {
+    const { name, description, category, image } = req.body;
+    const newItem = await prisma.item.create({
+      data: {
+        name,
+        description,
+        image,
+      },
+    });
+    res.status(201).json(newItem);
+  } catch (error) {
+    console.error("Error posting item", error);
+    res.status(500).json({message: "Error posting item"})
+  }
+});
+
 app.get("/api/search", async (req, res) => {
   try {
     const { query, category } = req.query;
@@ -133,15 +150,16 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await getUserByEmail(email);
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found" });
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(403).json({ message: "Invalid credentials" });
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) return res.status(403).json({ message: "Invalid credentials" });
     const token = setToken(user.id);
     res.status(200).json({ token, user });
   } catch (error) {
-    res.status(500).json({ message: "Error logging in" });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 app.delete("/api/users/:id", isLoggedIn, async (req, res) => {
@@ -251,11 +269,12 @@ app.delete("/api/reviews/:reviewId", isLoggedIn, async (req, res) => {
     res.status(500).json({ message: "Error deleting review" });
   }
 });
-// this is the comments
+// this is the comments secctions
 app.post("/api/reviews/:id/comments", isLoggedIn, async (req, res) => {
   try {
     const reviewId = Number(req.params.id);
     const { text } = req.body;
+    console.log("Creating comment for review id:", reviewId, "by user:", req.user);
     const comment = await prisma.comment.create({
       data: {
         text,
@@ -265,7 +284,8 @@ app.post("/api/reviews/:id/comments", isLoggedIn, async (req, res) => {
     });
     res.status(201).json(comment);
   } catch (error) {
-    res.status(500).json({ message: "Error creating comment" });
+    console.error("Error creating comment:", error);
+    res.status(500).json({ message: "Error creating comment", error: error.message });
   }
 });
 

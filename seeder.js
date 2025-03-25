@@ -13,29 +13,35 @@ async function main() {
   });
 
   const adminPassword = await bcrypt.hash("12345", 10);
-  await prisma.user.create({
-    data: {
-      firstName: "Ignacio",
-      lastName: "Jurado",
-      email: "iggyjurado45@gmail.com",
-      password: 12345,
-      isAdmin: true,
-    },
-  });
+await prisma.user.upsert({
+  where: { email: "iggyjurado45@gmail.com" },
+  update: { password: adminPassword },
+  create: {
+    firstName: "Ignacio",
+    lastName: "Jurado",
+    email: "iggyjurado45@gmail.com",
+    password: adminPassword,
+    isAdmin: true,
+  },
+});
 
   const userPassword = await bcrypt.hash("user12345", 10);
-  await prisma.user.create({
-    data: {
-      firstName: "John",
-      lastName: "Doe",
-      email: "johndoe@example.com",
-      password: userPassword,
-      isAdmin: false,
-    },
-  });
+const regularUser = await prisma.user.upsert({
+  where: { email: "johndoe@example.com" },
+  update: { password: userPassword },
+  create: {
+    firstName: "John",
+    lastName: "Doe",
+    email: "johndoe@example.com",
+    password: userPassword,
+    isAdmin: false,
+  },
+});
 
-  await prisma.item.create({
-    data: {
+  const nikeShoes = await prisma.item.upsert({
+    where: { name: "Nike Shoes" },
+    update: {},
+    create: {
       name: "Nike Shoes",
       description: "Great shoes for running.",
       image:
@@ -44,20 +50,45 @@ async function main() {
     },
   });
 
-  const item = await prisma.item.findFirst({ where: { name: "Nike Shoes" } });
-  const user = await prisma.user.findUnique({
-    where: { email: "johndoe@example.com" },
+  const existingReview = await prisma.review.findFirst({
+    where: { itemId: nikeShoes.id, userId: regularUser.id },
   });
-  if (item && user) {
+  if (!existingReview) {
     await prisma.review.create({
       data: {
         rating: 5,
         text: "These shoes are amazing!",
-        item: { connect: { id: item.id } },
-        user: { connect: { id: user.id } },
+        item: { connect: { id: nikeShoes.id } },
+        user: { connect: { id: regularUser.id } },
       },
     });
   }
+
+  await prisma.item.upsert({
+    where: { name: "Adidas Sneakers" },
+    update: {},
+    create: {
+      name: "Adidas Sneakers",
+      description: "Comfortable sneakers for everyday wear.",
+      image:
+        "https://bellerose.com/cdn/shop/files/ADI242EG4958M-010_12791089999_8a3c0a4a-699e-42c4-8171-298c34753fef.webp?v=1742003545&width=4000",
+      category: { connect: { name: "Product" } },
+    },
+  });
+
+  await prisma.item.upsert({
+    where: { name: "Puma Running Shoes" },
+    update: {},
+    create: {
+      name: "Puma Running Shoes",
+      description: "Lightweight and durable shoes.",
+      image:
+        "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/397894/02/sv01/fnd/PNA/fmt/png/PUMA-Club-5v5-Suede-Men's-Sneakers",
+      category: { connect: { name: "Product" } },
+    },
+  });
+
+  console.log("Seeding complete!");
 }
 
 main()
