@@ -97,6 +97,7 @@ app.post("/api/items", isLoggedIn, async (req,res)=> {
       data: {
         name,
         description,
+        category,
         image,
       },
     });
